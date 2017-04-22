@@ -1,0 +1,114 @@
+body{
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 13px;
+    background-color: #DFDFFF;
+    color: #555;
+    margin: 0;
+}
+div, p, pre, a {
+	padding: 2px;
+	margin: 2px;
+    display: inline-block;
+}
+
+#channelContainer {
+    background-color: #FFF;
+    padding: 0px;
+    margin: 0 0 2px 0;
+    width: 100%;
+
+    border:3px solid #777;
+    border-radius: 10px;    
+}
+
+.toggleButton {
+    border-radius: 5px;
+    margin: 4px;
+    min-width: 150px;
+}
+
+.post {
+    padding: 0px;
+    margin: 0 0 2px 0;
+    width: 100%;
+
+    background-color:#e3f7fc;
+    border:1px solid #8ed9f6;
+    border-radius: 10px;
+}
+
+.timestamp {
+    width: 150px;
+}
+
+.channel {
+    font-weight:bold;
+    text-transform:uppercase;
+}
+
+.stackToggle {
+    background: white;
+    color: black;
+    border-radius: 5px;
+    border: 1px solid gray;
+    text-decoration: none !important;
+}
+
+.stackMsg {
+    display: none;
+    background-color: white;
+    border: 2px solid gray;
+}
+/*
+---------------------------------------------
+*/
+
+.ASSERT {
+    background: #ECD9C5;
+    border: 1px solid #e48625;
+}
+
+.ERROR {
+    background:#ffecec;
+    border:1px solid #f5aca6;
+}
+
+.WARNING {
+    background:#fff8c4;
+    border:1px solid #f2c779;
+}
+
+.INFO {
+    background:#e3f7fc;
+    border:1px solid #8ed9f6;
+}
+
+.GUI { 
+    background-color: #e9ffd9;    
+    border: 1px solid #a6ca8a;
+}
+
+.GAMELOGIC {
+    background-color: #FDD;
+    border: 1px solid #f9c;
+}
+
+.CONTENT {
+    background-color: #CCD4FF;
+    border: 1px solid #192A53;
+}
+
+.SYSTEM {
+    background-color: #A2FF8F;
+    border: 1px solid #20A722;
+}
+
+.INPUT {
+    background-color: #F7FFAA;
+    border: 1px solid #DD9B16;
+}
+
+.GRAPHICS {
+    background-color: #F0DFFF;
+    border: 1px solid #821CC9;
+}

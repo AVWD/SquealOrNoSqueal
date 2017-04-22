@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 832e7920c5aaa21478cf5fbf507f584c
+timeCreated: 1492830391
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Azoft Sans
+  fontNames:
+  - Azoft Sans
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 5b8a7d30f2c11c741aa79313395f2958, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
