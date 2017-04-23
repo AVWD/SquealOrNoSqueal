@@ -35,9 +35,12 @@ public class GameManager : MonoBehaviour {
     public GameObject BriefcaseTemplate;
     public List<BriefCase> BriefcaseList = new List<BriefCase>(MAX_CASES);
 
+    public GameObject lastClicked = null;
+    public GameObject pigPrefab = null;
+
     void Awake()
     {
-        kgLogger.instance.Post(kgLogger.PostChannel.INFO, "Initializing GameManager", kgLogger.PostLevel.verbose);
+        kgLogger.instance.Post(kgLogger.PostChannel.INFO, "Initializing GameManager");
         if (instance == null)
             instance = this;
         else if (instance != this)
@@ -47,14 +50,65 @@ public class GameManager : MonoBehaviour {
     }
 
     // Use this for initialization
-    void Start () {
-		
+    void Start ()
+    {
+        SpriteRenderer sr = pigPrefab.GetComponent<SpriteRenderer>();
+        float width = sr.size.y;
+        float height = sr.size.x;
+
+        float halfw = sr.size.y * 5f * 0.5f;
+        float halfh = sr.size.x * 5f * 0.5f;
+
+        float heightAdjust = -1.25f;
+
+        CycleList(i =>
+        {
+            if(i<25)
+            {
+                Vector3 dest = new Vector3(halfw - (i % 5) * width, (halfh + heightAdjust) - (i / 5) * height, 0f);
+                GameObject instance = Instantiate(pigPrefab, Vector3.zero, Quaternion.identity) as GameObject;
+                instance.transform.SetParent(this.transform);
+                StartCoroutine(MoveToPosition(instance.transform, dest, 1.5f));
+            }
+        });
 	}
 	
 	// Update is called once per frame
-	void Update () {
-		
-	}
+	void Update ()
+    {
+        if (Input.GetMouseButton(0))
+        {
+            // Cast a ray from the camera face straight back. Did the click hit a game object?
+            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+
+            if (hit.collider != null && hit.collider != lastClicked)
+            {
+                SpriteRenderer sr;
+                if(lastClicked != null)
+                {
+                    sr = lastClicked.GetComponent<SpriteRenderer>();
+                    sr.color = Color.white;
+                }
+
+                lastClicked = hit.collider.gameObject;
+                sr = lastClicked.GetComponent<SpriteRenderer>();
+                sr.color = Color.red;
+            }
+        }
+
+    }
+
+    IEnumerator MoveToPosition(Transform item, Vector3 destination, float animTime = 0.5f)
+    {
+        float elapsedTime = 0;
+        Vector3 startingPos = item.transform.position;
+        while (elapsedTime < animTime)
+        {
+            item.transform.position = Vector3.Lerp(startingPos, destination, (elapsedTime / animTime));
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+    }
 
     void CycleList(Action<int> toDo)
     {
@@ -78,6 +132,11 @@ public class GameManager : MonoBehaviour {
         UI_Offer.text = Offer.ToString("C2");
     }
 
+    /// <summary>
+    /// Get the banker offer
+    /// </summary>
+    /// <param name="adjusted">when true, will return a percentage of the weighted avg based on game progress</param>
+    /// <returns></returns>
     public double getOffer(bool adjusted = true)
     {
         double offer = 0;
@@ -86,6 +145,7 @@ public class GameManager : MonoBehaviour {
         // Calculate middle weighted avg
         CycleList(i =>
         {
+            // Add remaining unpicked cases
             if(!BriefcaseList[i].Picked)
             {
                 count++;
@@ -93,8 +153,10 @@ public class GameManager : MonoBehaviour {
             }
         });
 
-        // no divide by zero
-        if(count > 0) offer = Math.Sqrt(offer / count);
+        // no divide by zero err
+        if (count <= 0) return 0;
+
+        offer = Math.Sqrt(offer / count);
         double gamePct = count / MAX_CASES;
 
         if (adjusted)
@@ -104,6 +166,11 @@ public class GameManager : MonoBehaviour {
             return offer;
     }
 
+    /// <summary>
+    /// What round are we currently in
+    /// </summary>
+    /// <param name="picks">how many picks have been made</param>
+    /// <returns>offer number</returns>
     public double getOfferNumber(int picks)
     {
         int offer = 0;
@@ -165,7 +232,7 @@ public class GameManager : MonoBehaviour {
 
     void InitGame()
     {
-        kgLogger.instance.Post(kgLogger.PostChannel.INFO, "Initializing Cases", kgLogger.PostLevel.verbose);
+        kgLogger.instance.Post(kgLogger.PostChannel.INFO, "Initializing Cases");
 
         CurrentPick = 0;
         Expected = 0;
@@ -204,9 +271,11 @@ public class GameManager : MonoBehaviour {
 
         CycleList(i =>
         {
+            double val = amounts.Dequeue();
+
             BriefCase bc = new BriefCase();
             bc.Reset();
-            bc.Value = amounts.Dequeue();
+            bc.Value = val;
             BriefcaseList.Add(bc);
         });
     }
