@@ -68,7 +68,7 @@ public class GameManager : MonoBehaviour {
                 Vector3 dest = new Vector3(halfw - (i % 5) * width, (halfh + heightAdjust) - (i / 5) * height, 0f);
                 GameObject instance = Instantiate(pigPrefab, Vector3.zero, Quaternion.identity) as GameObject;
                 instance.transform.SetParent(this.transform);
-                StartCoroutine(MoveToPosition(instance.transform, dest, 1.5f));
+                StartCoroutine(MoveToPositionCurved(instance.transform, dest, 1.5f));
             }
         });
 	}
@@ -81,7 +81,7 @@ public class GameManager : MonoBehaviour {
             // Cast a ray from the camera face straight back. Did the click hit a game object?
             RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
 
-            if (hit.collider != null && hit.collider != lastClicked)
+            if (hit.collider != null && hit.collider.gameObject != lastClicked)
             {
                 SpriteRenderer sr;
                 if(lastClicked != null)
@@ -94,8 +94,53 @@ public class GameManager : MonoBehaviour {
                 sr = lastClicked.GetComponent<SpriteRenderer>();
                 sr.color = Color.red;
             }
+            else if (hit.collider != null && hit.collider.gameObject == lastClicked)
+            {
+                Transform t = hit.collider.gameObject.transform;
+                Vector3 pos = t.position;
+
+                float distanceFromCamera = 10.0f;
+                Vector3 dest = Camera.main.ScreenToWorldPoint(new Vector3(0, Screen.height, distanceFromCamera));
+
+                if (pos == dest)
+                {
+                    dest = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, 0, distanceFromCamera));
+                }
+                StartCoroutine(MoveToPositionCurved(t, dest, 1.5f));
+
+            }
         }
 
+    }
+
+    public Vector3 Bezier(float t, Vector3 a, Vector3 b, Vector3 c)
+    {
+        var ab = Vector3.Lerp(a, b, t);
+        var bc = Vector3.Lerp(b, c, t);
+        return Vector3.Lerp(ab, bc, t);
+    }
+
+    IEnumerator MoveToPositionCurved(Transform item, Vector3 destination, float animTime = 0.5f)
+    {
+        float elapsedTime = 0;
+        Vector3 startingPos = item.transform.position;
+        Vector3 norm = (destination - startingPos).PerpendicularClockwise().normalized;
+        Vector3 handle = (destination + startingPos) * 0.5f + (norm * 10.0f);
+
+        while (elapsedTime < 1.5f)
+        {
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        elapsedTime = 0;
+
+        while (elapsedTime < animTime)
+        {
+            item.transform.position = Bezier((elapsedTime / animTime), startingPos, handle, destination);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        item.transform.position = destination;
     }
 
     IEnumerator MoveToPosition(Transform item, Vector3 destination, float animTime = 0.5f)
@@ -108,6 +153,7 @@ public class GameManager : MonoBehaviour {
             elapsedTime += Time.deltaTime;
             yield return null;
         }
+        item.transform.position = destination;
     }
 
     void CycleList(Action<int> toDo)
