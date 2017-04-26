@@ -38,6 +38,13 @@ public class GameManager : MonoBehaviour {
     public GameObject lastClicked = null;
     public GameObject pigPrefab = null;
 
+    public Transform panelGameBoard;
+    public GameObject valueDisplayPrefab;
+    public float curveHandleDistance = 10f;
+    public float animationDelay = 1.5f;
+
+    Dictionary<double, GameObject> valueDisplays = new Dictionary<double, GameObject>();
+
     void Awake()
     {
         kgLogger.instance.Post(kgLogger.PostChannel.INFO, "Initializing GameManager");
@@ -106,11 +113,16 @@ public class GameManager : MonoBehaviour {
                 {
                     dest = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, 0, distanceFromCamera));
                 }
-                StartCoroutine(MoveToPositionCurved(t, dest, 1.5f));
+                StartCoroutine(MoveToPositionCurved(t, dest, 1.5f, CurveHandleType.END, false));
 
             }
         }
 
+    }
+
+    enum CurveHandleType
+    {
+        START, MID, END
     }
 
     public Vector3 Bezier(float t, Vector3 a, Vector3 b, Vector3 c)
@@ -120,14 +132,26 @@ public class GameManager : MonoBehaviour {
         return Vector3.Lerp(ab, bc, t);
     }
 
-    IEnumerator MoveToPositionCurved(Transform item, Vector3 destination, float animTime = 0.5f)
+    IEnumerator MoveToPositionCurved(Transform item, Vector3 destination, float animTime = 0.5f, CurveHandleType curveType = CurveHandleType.MID, bool randomized = true)
     {
         float elapsedTime = 0;
         Vector3 startingPos = item.transform.position;
-        Vector3 norm = (destination - startingPos).PerpendicularClockwise().normalized;
-        Vector3 handle = (destination + startingPos) * 0.5f + (norm * 10.0f);
+        Vector3 norm = Vector3.zero;
+        Vector3 handle = Vector3.zero;
 
-        while (elapsedTime < 1.5f)
+        if(randomized && Random.value > 0.5f)
+            norm = (destination - startingPos).PerpendicularClockwise().normalized;
+        else
+            norm = (destination - startingPos).PerpendicularCounterClockwise().normalized;
+
+        if (curveType == CurveHandleType.MID)
+            handle = (destination + startingPos) * 0.5f + (norm * curveHandleDistance);
+        else if (curveType == CurveHandleType.START)
+            handle = startingPos + (norm * curveHandleDistance);
+        else if (curveType == CurveHandleType.END)
+            handle = destination + (norm * curveHandleDistance);
+
+        while (elapsedTime < animationDelay)
         {
             elapsedTime += Time.deltaTime;
             yield return null;
@@ -323,6 +347,16 @@ public class GameManager : MonoBehaviour {
             bc.Reset();
             bc.Value = val;
             BriefcaseList.Add(bc);
+
+
+            GameObject newButton = Instantiate(valueDisplayPrefab) as GameObject;
+
+            Text text = newButton.transform.GetComponentInChildren<Text>();
+            text.text = val.ToString("C2");
+
+            newButton.transform.SetParent(panelGameBoard);
+            valueDisplays.Add(val, newButton);
+
         });
     }
 }
