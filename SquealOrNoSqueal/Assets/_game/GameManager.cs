@@ -1,4 +1,5 @@
-﻿using System;
+﻿/*
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -85,7 +86,6 @@ public class GameManager : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
-        /*
         if (Input.GetMouseButton(0))
         {
             // Cast a ray from the camera face straight back. Did the click hit a game object?
@@ -120,8 +120,6 @@ public class GameManager : MonoBehaviour {
 
             }
         }
-        */
-
     }
 
     IEnumerator WaitForInstruction()
@@ -129,7 +127,7 @@ public class GameManager : MonoBehaviour {
         // TODO Add FSM for cases left to pick. Loop in game logic for banker and game end.
         while (true)
         {
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonUp(0))
             {
                 RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
                 if(hit.collider && hit.transform.gameObject.tag == "PiggyBank")
@@ -150,6 +148,25 @@ public class GameManager : MonoBehaviour {
             yield return null;
         }
         //not here yield return null;
+    }
+
+    IEnumerator GameFlow()
+    {
+
+
+        yield return null;
+    }
+    IEnumerator PickCases(int count)
+    {
+        int picked = count;
+        while(picked > 0)
+        {
+            StartCoroutine(WaitForInstruction());
+            picked++;
+
+            yield return null;
+        }
+
     }
 
     enum CurveHandleType
@@ -383,7 +400,6 @@ public class GameManager : MonoBehaviour {
             bc.Value = val;
             BriefcaseList.Add(bc);
 
-
             GameObject newButton = Instantiate(valueDisplayPrefab) as GameObject;
 
             Text text = newButton.transform.GetComponentInChildren<Text>();
@@ -395,3 +411,4 @@ public class GameManager : MonoBehaviour {
         });
     }
 }
+*/
