@@ -78,11 +78,14 @@ public class GameManager : MonoBehaviour {
                 StartCoroutine(MoveToPositionCurved(instance.transform, dest, 1.5f));
             }
         });
-	}
+
+        StartCoroutine(WaitForInstruction());
+    }
 	
 	// Update is called once per frame
 	void Update ()
     {
+        /*
         if (Input.GetMouseButton(0))
         {
             // Cast a ray from the camera face straight back. Did the click hit a game object?
@@ -113,11 +116,40 @@ public class GameManager : MonoBehaviour {
                 {
                     dest = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, 0, distanceFromCamera));
                 }
-                StartCoroutine(MoveToPositionCurved(t, dest, 1.5f, CurveHandleType.END, false));
+                StartCoroutine(MoveToPositionCurved(t, dest, 1.5f, CurveHandleType.START, true));
 
             }
         }
+        */
 
+    }
+
+    IEnumerator WaitForInstruction()
+    {
+        // TODO Add FSM for cases left to pick. Loop in game logic for banker and game end.
+        while (true)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+                if(hit.collider && hit.transform.gameObject.tag == "PiggyBank")
+                {
+                    Debug.Log("Clicked case");
+                    lastClicked = hit.collider.gameObject;
+                    SpriteRenderer sr = lastClicked.GetComponent<SpriteRenderer>();
+                    sr.color = sr.color == Color.white ? Color.red : Color.white;
+
+                    //float distanceFromCamera = 10.0f;
+                    //Vector3 dest = Camera.main.ScreenToWorldPoint(new Vector3(20, 20, distanceFromCamera));
+
+                    StartCoroutine(MoveToPositionCurved(lastClicked.transform, lastClicked.transform.position + new Vector3(1, 0, 0), 1.5f, CurveHandleType.START, true));
+
+                    //yield break;
+                }
+            }
+            yield return null;
+        }
+        //not here yield return null;
     }
 
     enum CurveHandleType
@@ -164,7 +196,10 @@ public class GameManager : MonoBehaviour {
             elapsedTime += Time.deltaTime;
             yield return null;
         }
+
         item.transform.position = destination;
+        SpriteRenderer sr = item.gameObject.GetComponent<SpriteRenderer>();
+        sr.color = Color.white;
     }
 
     IEnumerator MoveToPosition(Transform item, Vector3 destination, float animTime = 0.5f)
