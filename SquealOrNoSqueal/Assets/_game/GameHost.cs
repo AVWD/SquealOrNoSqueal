@@ -27,6 +27,7 @@ public class GameHost : StateMachine
     public AudioClip SndPick;
     public AudioClip SndStop;
     public AudioClip SndNewRound;
+    public AudioClip SndBankerOffer;
 
     [Header("Objects")]
     public Text InstructionsText;
@@ -102,9 +103,9 @@ public class GameHost : StateMachine
             1000000d
         };
 
+        // Init the value display on left hand side of game
         for(int i = 0; i < amtList.Count; i++)
         {
-            // Value Display
             GameObject newButton = Instantiate(PickedValuePrefab) as GameObject;
             Text text = newButton.transform.GetComponentInChildren<Text>();
             text.text = amtList[i].ToString("C2");
@@ -112,6 +113,7 @@ public class GameHost : StateMachine
             ValueDisplays.Add(amtList[i], newButton);
         }
 
+        // Prep grid for pig locations
         Vector3 center = Camera.main.ScreenToWorldPoint(PlayAreaTransform.transform.position);
         SpriteRenderer sr = PigPrefab.GetComponent<SpriteRenderer>();
         int grid = 5;
@@ -121,9 +123,9 @@ public class GameHost : StateMachine
         float halfHeight = texHeight * grid * 0.5f;
         Vector3 dest = Vector3.zero;
 
-        // Lazy Randomize
+        // Lazy way of randomizing the values in the list
         amtList = amtList.OrderBy(o => Guid.NewGuid()).ToList();
-        // Iterate
+        // Create the pigs and set up an animation for their entry on the screen
         foreach (var details in amtList.Select((value, idx) => new { Index = idx, Value = value }))
         {
             PiggyBank bank = new PiggyBank();
@@ -131,22 +133,21 @@ public class GameHost : StateMachine
             bank.sprite = Instantiate(PigPrefab, Vector3.zero, Quaternion.identity) as GameObject;
             bank.sprite.transform.SetParent(this.transform);
             bank.sprite.transform.position = new Vector3(center.x, center.y - 10, 0f);
+            bank.id = details.Index;
 
             dest.x = center.x + halfWidth - (details.Index % grid) * texWidth;
             dest.y = center.y + halfHeight - (details.Index / grid) * texHeight;
 
-            //bank.id = count++;
-            bank.id = details.Index;
-
+            // Last pig aligned to middle column
             if (bank.id == 25) dest.x -= texWidth * 2;
+
+            // Stagger entry on screen
             StartCoroutine(MoveToPositionCurved(bank.sprite.transform, dest, EntryAnimTime, EntryAnimGap * details.Index, CurveHandleType.END));
 
             BankList.Add(bank);
         }
 
-
-
-
+        // Wait for animations to stop before next round
         StartCoroutine(BlockWait(EntryAnimGap * MAX_CASES + (EntryAnimTime*2), ()=> {
             ChangeCurrentState(GameState.FirstCase);
         }));
@@ -166,25 +167,31 @@ public class GameHost : StateMachine
     {
         if(!IsPicking)
         {
-            ChangeCurrentState(GameState.PickCase);
+            StartCoroutine(BlockWait(2, () => {
+                ChangeCurrentState(GameState.PickCase);
+            }));
         }
+    }
+
+    void ExitFirstCase(Enum next)
+    {
+        Round++;
     }
     #endregion
 
     #region PickCase
-    int newTarget = 1;
     void EnterPickCase(Enum previous)
     {
-        InstructionsText.text = "Select 6 more piggy banks.";
+        PickedThisRound = 0;
+        InstructionsText.text = "Select " + Picks[Round] + " more piggy banks.";
         Audio.PlayOneShot(SndNewRound, 1);
         StartCoroutine(WaitForInstruction());
-        newTarget = 7;
     }
     void UpdatePickCase()
     {
         if (!IsPicking)
         {
-            if(Picked < newTarget)
+            if(PickedThisRound < Picks[Round])
             {
                 StartCoroutine(WaitForInstruction());
             } else
@@ -193,9 +200,24 @@ public class GameHost : StateMachine
             }            
         }
     }
+    void ExitPickCase(Enum next)
+    {
+        Round++;
+    }
     #endregion
 
     #region BankOffer
+    void EnterBankOffer(Enum previous)
+    {
+        Audio.PlayOneShot(SndBankerOffer, 1);
+        Double offer = getOffer();
+        InstructionsText.text = "The Farmer's offer is " + offer.ToString("C2") + ".";
+        // Produce choice buttons
+
+        StartCoroutine(BlockWait(2, () => {
+            ChangeCurrentState(GameState.PickCase);
+        }));
+    }
     #endregion
 
     #region Reveal
@@ -298,8 +320,6 @@ public class GameHost : StateMachine
                 RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
                 if (hit.collider && hit.transform.gameObject.tag == "PiggyBank")
                 {
-                    this.PickedThisRound++;
-
                     CycleList((i) =>
                     {
                         if (i.sprite == hit.transform.gameObject && !i.picked && !i.held)
@@ -321,6 +341,7 @@ public class GameHost : StateMachine
 
                             i.picked = true;
                             Picked++;
+                            PickedThisRound++;
                             IsPicking = false;
                             Audio.PlayOneShot(SndPick, 1);
 
@@ -358,7 +379,7 @@ public class GameHost : StateMachine
 
         if (adjusted)
             // 9 increments between 15% and 85% - 100% final case
-            return offer * (0.15 + (((1 - 0.15) / 9) * (Picked / MAX_CASES)));
+            return offer * (0.15 + (((1 - 0.15) / 9) * (Picks.Length - Round)));
         else
             return offer;
     }
